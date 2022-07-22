@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 import 'package:flutter_native_splash/flutter_native_splash.dart';
-import 'dart:async';
+import 'package:url_launcher/url_launcher.dart';
 
 void main() {
   WidgetsBinding widgetsBinding = WidgetsFlutterBinding.ensureInitialized();
@@ -18,6 +18,13 @@ class FillerStore extends StatefulWidget {
 
 class _FillerStoreState extends State<FillerStore> {
   late WebViewController _webViewController;
+
+  Future<void> _launchUrl(url) async {
+    if (!await launchUrl(Uri.parse(url), mode: LaunchMode.externalNonBrowserApplication)) {
+      throw 'Could not launch $url';
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
@@ -49,7 +56,14 @@ class _FillerStoreState extends State<FillerStore> {
               gestureNavigationEnabled: true,
               backgroundColor: Colors.white,
               allowsInlineMediaPlayback: true,
-              javascriptMode: JavascriptMode.unrestricted,      
+              javascriptMode: JavascriptMode.unrestricted,
+              navigationDelegate: (NavigationRequest request) async {
+                if (request.url.startsWith("tg") || request.url.startsWith("https://m.vk")) {
+                  await _launchUrl(request.url).then((value) => _webViewController.goBack());
+                  return NavigationDecision.prevent;
+                }
+                return NavigationDecision.navigate;
+              },
               initialUrl: 'https://fillerstore.ru',
               debuggingEnabled: false,
              ),
